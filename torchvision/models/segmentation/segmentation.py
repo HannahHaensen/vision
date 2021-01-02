@@ -1,11 +1,14 @@
-from .._utils import IntermediateLayerGetter
-from ..utils import load_state_dict_from_url
-from .. import resnet
-from .deeplabv3 import DeepLabHead, DeepLabV3
-from .fcn import FCN, FCNHead
+import torch
+
+from torchvision.models import resnet
+from torchvision.models._utils import IntermediateLayerGetter
+from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
+
+from torchvision.models.segmentation.pspnet import PSPNet
+from torchvision.models.segmentation.fcn import FCNHead, FCN
 
 
-__all__ = ['fcn_resnet50', 'fcn_resnet101', 'deeplabv3_resnet50', 'deeplabv3_resnet101']
+__all__ = ['fcn_resnet50', 'fcn_resnet101', 'deeplabv3_resnet50', 'deeplabv3_resnet101', 'pspnet_resnet50']
 
 
 model_urls = {
@@ -17,6 +20,7 @@ model_urls = {
 
 
 def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True):
+    print(name)
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained_backbone,
         replace_stride_with_dilation=[False, True, True])
@@ -52,9 +56,7 @@ def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss
         model_url = model_urls[arch]
         if model_url is None:
             raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
-        else:
-            state_dict = load_state_dict_from_url(model_url, progress=progress)
-            model.load_state_dict(state_dict)
+
     return model
 
 
@@ -104,3 +106,22 @@ def deeplabv3_resnet101(pretrained=False, progress=True,
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     return _load_model('deeplabv3', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
+
+def pspnet_resnet50(pretrained=False, progress=True,
+                       num_classes=21, aux_loss=True, **kwargs):
+    """Constructs a DeepLabV3 model with a ResNet-50 backbone.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
+            contains the same classes as Pascal VOC
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+
+    return PSPNet(pretrained=pretrained)
+
+if __name__ == '__main__':
+    input = torch.rand(4, 3, 64, 128)
+    model = pspnet_resnet50()
+    # model.eval()
+    print(model)
+    output = model(input)
